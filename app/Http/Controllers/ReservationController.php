@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReservationRequest;
 use App\Models\Reservation;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
@@ -21,22 +23,27 @@ class ReservationController extends Controller
     /**
      * Store a newly created reservation in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreReservationRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'space_id' => 'required|exists:spaces,id',
-            'start' => 'required|date',
-            'end' => 'required|date|after:start',
-            'event_name' => 'required|string|max:255',
-        ]);
+        try {
+            $reservation = Reservation::create([
+                'user_id' => Auth::id(),
+                'space_id' => $request->space_id,
+                'event_name' => $request->event_name,
+                'start' => $request->start,
+                'end' => $request->end,
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            return response()->json([
+                'message' => 'Reserva creada con éxito',
+                'reservation' => $reservation
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al crear la reserva',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $reservation = Reservation::create($request->all());
-        return response()->json($reservation, 201);
     }
 
     /**
@@ -54,27 +61,13 @@ class ReservationController extends Controller
     /**
      * Update the specified reservation in storage.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, Reservation $reservation): JsonResponse
     {
-        $reservation = Reservation::find($id);
-        if (!$reservation) {
-            return response()->json(['message' => 'Reservation not found'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'sometimes|required|exists:users,id',
-            'space_id' => 'sometimes|required|exists:spaces,id',
-            'start' => 'sometimes|required|date',
-            'end' => 'sometimes|required|date|after:start',
-            'event_name' => 'sometimes|required|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
         $reservation->update($request->all());
-        return response()->json($reservation);
+        return response()->json([
+            'message' => 'Reserva actualizada con éxito',
+            'reservation' => $reservation
+        ], 201);
     }
 
     /**

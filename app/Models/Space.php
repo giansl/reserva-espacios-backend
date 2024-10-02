@@ -10,4 +10,9 @@ class Space extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'capacity', 'description', 'type'];
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
 }

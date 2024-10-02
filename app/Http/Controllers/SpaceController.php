@@ -6,7 +6,7 @@ use App\Models\Space;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Reservation;
+use Illuminate\Validation\ValidationException;
 
 class SpaceController extends Controller
 {
@@ -24,18 +24,16 @@ class SpaceController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-            'type' => 'required|string|max:255',
+            'type' => 'required|string|in:sala,auditorio,laboratorio', // Ajusta según tus tipos válidos
+            'description' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
+        // Crear el espacio con los datos validados
+        $space = Space::create($validatedData);
 
-        $space = Space::create($request->all());
         return response()->json($space, 201);
     }
 
@@ -54,26 +52,18 @@ class SpaceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, Space $space)
     {
-        $space = Space::find($id);
-        if (!$space) {
-            return response()->json(['message' => 'Espacio no encontrado'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'capacity' => 'sometimes|required|integer|min:1',
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'capacity' => 'required|integer|min:1',
             'description' => 'nullable|string',
-            'type' => 'required|string|max:255',
+            'type' => 'required|string|in:sala,auditorio,laboratorio',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
+        $space->update($validatedData);
 
-        $space->update($request->all());
-        return response()->json($space);
+        return response()->json($space, 200);
     }
 
     /**
@@ -82,20 +72,24 @@ class SpaceController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $space = Space::find($id);
-        if (!$space) {
-            return response()->json(['message' => 'Espacio no encontrado'], 404);
-        }
+        try {
+            
+            if (!$space) {
+                return response()->json(['message' => 'Espacio no encontrado'], 404);
+            }
+            $space->delete();
+            return response()->json(['message' => 'Espacio eliminado con éxito']);
 
-        // Verificar si hay reservas asociadas
-        $reservationsCount = Reservation::where('space_id', $id)->count();
-        if ($reservationsCount > 0) {
-            return response()->json([
-                'message' => 'No se puede eliminar el espacio porque tiene reservas asociadas',
-                'reservations_count' => $reservationsCount
-            ], 409); // 409 Conflict
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() === '23000') {
+                $reservationsCount = $space->reservations()->count();
+                return response()->json([
+                    'message' => 'No se puede eliminar el espacio porque tiene reservas asociadas',
+                    'reservations_count' => $reservationsCount
+                ], 409);
+            }
+            throw $e;
         }
-
-        $space->delete();
-        return response()->json(['message' => 'Espacio eliminado con éxito']);
+        
     }
 }
