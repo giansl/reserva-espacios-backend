@@ -8,11 +8,35 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Info(
+ *     title="API de Reserva de Espacios",
+ *     version="1.0.0",
+ *     description="API para gestionar reservas de espacios"
+ * )
+ * @OA\Tag(
+ *     name="Reservations",
+ *     description="Operaciones relacionadas con reservaciones"
+ * )
+ */
 class ReservationController extends Controller
 {
     /**
-     * Display a listing of the reservations.
+     * @OA\Get(
+     *     path="/api/reservations",
+     *     summary="Obtener todas las reservaciones",
+     *     tags={"Reservations"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de reservaciones",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Reservation")
+     *         )
+     *     )
+     * )
      */
     public function index(): JsonResponse
     {
@@ -21,7 +45,31 @@ class ReservationController extends Controller
     }
 
     /**
-     * Store a newly created reservation in storage.
+     * @OA\Post(
+     *     path="/api/reservations",
+     *     summary="Crear una nueva reservación",
+     *     tags={"Reservations"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/StoreReservationRequest")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Reservación creada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reserva creada con éxito"),
+     *             @OA\Property(property="reservation", ref="#/components/schemas/Reservation")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error al crear la reservación",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Error al crear la reserva"),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     )
+     * )
      */
     public function store(StoreReservationRequest $request): JsonResponse
     {
@@ -47,7 +95,30 @@ class ReservationController extends Controller
     }
 
     /**
-     * Display the specified reservation.
+     * @OA\Get(
+     *     path="/api/reservations/{id}",
+     *     summary="Obtener una reservación específica",
+     *     tags={"Reservations"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la reservación",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Detalles de la reservación",
+     *         @OA\JsonContent(ref="#/components/schemas/Reservation")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reservación no encontrada",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reservation not found")
+     *         )
+     *     )
+     * )
      */
     public function show(string $id): JsonResponse
     {
@@ -59,7 +130,30 @@ class ReservationController extends Controller
     }
 
     /**
-     * Update the specified reservation in storage.
+     * @OA\Put(
+     *     path="/api/reservations/{id}",
+     *     summary="Actualizar una reservación existente",
+     *     tags={"Reservations"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la reservación",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/StoreReservationRequest")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Reservación actualizada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reserva actualizada con éxito"),
+     *             @OA\Property(property="reservation", ref="#/components/schemas/Reservation")
+     *         )
+     *     )
+     * )
      */
     public function update(Request $request, Reservation $reservation): JsonResponse
     {
@@ -71,7 +165,32 @@ class ReservationController extends Controller
     }
 
     /**
-     * Remove the specified reservation from storage.
+     * @OA\Delete(
+     *     path="/api/reservations/{id}",
+     *     summary="Eliminar una reservación",
+     *     tags={"Reservations"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la reservación",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Reservación eliminada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reservation deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reservación no encontrada",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reservation not found")
+     *         )
+     *     )
+     * )
      */
     public function destroy(string $id): JsonResponse
     {
