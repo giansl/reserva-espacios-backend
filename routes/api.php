@@ -11,4 +11,5 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('spaces', SpaceController::class);
     Route::apiResource('reservations', ReservationController::class);
+    Route::get('/user-reservations/{user_id}', [ReservationController::class, 'getUserReservations']);
 });

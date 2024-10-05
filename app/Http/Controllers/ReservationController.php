@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReservationRequest;
 use App\Models\Reservation;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +42,47 @@ class ReservationController extends Controller
     public function index(): JsonResponse
     {
         $reservations = Reservation::with(['user', 'space'])->get();
+        return response()->json($reservations);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/user-reservations/{user_id}",
+     *     summary="Obtener reservaciones de un usuario específico",
+     *     tags={"Reservaciones"},
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="path",
+     *         description="ID del usuario para obtener sus reservaciones",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de reservaciones del usuario",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Reservation")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Usuario no encontrado"
+     *     )
+     * )
+     */
+    public function getUserReservations(int $userId): JsonResponse
+    {
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+
+        $reservations = Reservation::with(['space'])
+            ->where('user_id', $userId)
+            ->get();
+
         return response()->json($reservations);
     }
 
